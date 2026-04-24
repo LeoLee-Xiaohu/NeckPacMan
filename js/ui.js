@@ -16,7 +16,12 @@ export class UIController {
     this.score = 0;
     this.countdown = CALIBRATION_SECONDS;
     this.calibrationTimer = null;
+    this.cameraMessage = "Waiting for webcam";
+    this.cameraTone = "idle";
+    this.errorMessage = "";
+    this.startInFlight = false;
     this.listeners = {
+      beforeStart: [],
       start: [],
       playing: [],
       reset: [],
@@ -30,6 +35,10 @@ export class UIController {
 
   onStart(listener) {
     this.listeners.start.push(listener);
+  }
+
+  onBeforeStart(listener) {
+    this.listeners.beforeStart.push(listener);
   }
 
   onPlaying(listener) {
@@ -60,7 +69,28 @@ export class UIController {
     this.state = "start";
     this.score = 0;
     this.countdown = CALIBRATION_SECONDS;
+    this.errorMessage = "";
+    this.startInFlight = false;
     this.emit("reset");
+    this.render();
+  }
+
+  setCameraStatus(message, tone = "idle") {
+    if (this.cameraMessage === message && this.cameraTone === tone) {
+      return;
+    }
+
+    this.cameraMessage = message;
+    this.cameraTone = tone;
+    this.render();
+  }
+
+  setError(message = "") {
+    if (this.errorMessage === message) {
+      return;
+    }
+
+    this.errorMessage = message;
     this.render();
   }
 
@@ -70,26 +100,46 @@ export class UIController {
     }
   }
 
-  startCalibration() {
+  async startCalibration() {
+    if (this.startInFlight) {
+      return;
+    }
+
     this.clearCalibrationTimer();
-    this.state = "calibrating";
-    this.countdown = CALIBRATION_SECONDS;
-    this.emit("start");
+    this.errorMessage = "";
+    this.startInFlight = true;
     this.render();
 
-    this.calibrationTimer = window.setInterval(() => {
-      this.countdown -= 1;
-
-      if (this.countdown <= 0) {
-        this.clearCalibrationTimer();
-        this.state = "playing";
-        this.render();
-        this.emit("playing");
-        return;
+    try {
+      for (const listener of this.listeners.beforeStart) {
+        const result = await listener();
+        if (result === false) {
+          return;
+        }
       }
 
+      this.state = "calibrating";
+      this.countdown = CALIBRATION_SECONDS;
+      this.emit("start");
       this.render();
-    }, 1000);
+
+      this.calibrationTimer = window.setInterval(() => {
+        this.countdown -= 1;
+
+        if (this.countdown <= 0) {
+          this.clearCalibrationTimer();
+          this.state = "playing";
+          this.render();
+          this.emit("playing");
+          return;
+        }
+
+        this.render();
+      }, 1000);
+    } finally {
+      this.startInFlight = false;
+      this.render();
+    }
   }
 
   clearCalibrationTimer() {
@@ -123,7 +173,11 @@ export class UIController {
           <p class="overlay-copy">
             Start a short session, grant camera access when prompted, and guide Pac-Man with head movement.
           </p>
-          <button class="overlay-button" type="button" data-action="start">Start</button>
+          <p class="camera-hint camera-hint--${this.cameraTone}">${this.cameraMessage}</p>
+          ${this.errorMessage ? `<p class="overlay-error">${this.errorMessage}</p>` : ""}
+          <button class="overlay-button" type="button" data-action="start" ${this.startInFlight ? "disabled" : ""}>
+            ${this.startInFlight ? "Connecting..." : "Start"}
+          </button>
         </section>
       `;
     }
