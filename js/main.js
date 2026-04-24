@@ -1,4 +1,5 @@
 import { UIController } from "./ui.js";
+import { renderMaze } from "./maze.js";
 
 const canvas = document.getElementById("game-canvas");
 const uiRoot = document.getElementById("ui-root");
@@ -30,22 +31,15 @@ const ui = new UIController({
 let winTimer = null;
 
 function drawBackdrop(message) {
-  context.fillStyle = "#000000";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "#2b6aff";
-  context.fillRect(48, 48, canvas.width - 96, canvas.height - 96);
-  context.fillStyle = "#000000";
-  context.fillRect(72, 72, canvas.width - 144, canvas.height - 144);
-  context.fillStyle = "#f9d649";
-  context.beginPath();
-  context.arc(canvas.width / 2, canvas.height / 2, 32, 0.25 * Math.PI, 1.75 * Math.PI);
-  context.lineTo(canvas.width / 2, canvas.height / 2);
-  context.closePath();
-  context.fill();
+  renderMaze(context, canvas);
+
+  context.fillStyle = "rgba(0, 0, 0, 0.72)";
+  context.fillRect(170, canvas.height - 168, canvas.width - 340, 72);
   context.fillStyle = "#ffffff";
   context.font = "28px Trebuchet MS";
   context.textAlign = "center";
-  context.fillText(message, canvas.width / 2, canvas.height - 120);
+  context.textBaseline = "middle";
+  context.fillText(message, canvas.width / 2, canvas.height - 132);
 }
 
 function clearWinTimer() {
