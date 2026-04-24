@@ -8,12 +8,25 @@
   </head>
   <body>
     <main class="app-shell">
-      <canvas
-        id="game-canvas"
-        width="800"
-        height="600"
-        aria-label="NeckPacMan game canvas"
-      ></canvas>
+      <section class="game-stage" aria-label="NeckPac game area">
+        <canvas
+          id="game-canvas"
+          width="800"
+          height="600"
+          aria-label="NeckPacMan game canvas"
+        ></canvas>
+        <div
+          id="camera-preview"
+          class="camera-preview"
+          aria-label="Camera preview container"
+        >
+          <div class="camera-preview__label">Camera Preview</div>
+          <div class="camera-preview__frame">
+            <span>Waiting for webcam</span>
+          </div>
+        </div>
+        <div id="ui-root" class="ui-root" aria-live="polite"></div>
+      </section>
     </main>
     <script type="module" src="./js/main.js"></script>
   </body>

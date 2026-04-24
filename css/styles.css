@@ -21,12 +21,174 @@ body {
   padding: 24px;
 }
 
+.game-stage {
+  position: relative;
+  width: min(800px, calc(100vw - 48px));
+}
+
 #game-canvas {
   display: block;
-  width: min(800px, calc(100vw - 48px));
+  width: 100%;
   height: auto;
   max-height: calc(100vh - 48px);
   border: 2px solid #5a5a5a;
   background: #000000;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.camera-preview {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 180px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  background: rgba(6, 10, 24, 0.82);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.camera-preview__label {
+  margin-bottom: 8px;
+  color: #f0f3ff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.camera-preview__frame {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.08), transparent 35%),
+    linear-gradient(180deg, rgba(35, 57, 94, 0.8), rgba(9, 14, 26, 0.9));
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.ui-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  pointer-events: none;
+}
+
+.ui-root--playing {
+  place-items: start;
+}
+
+.overlay-card,
+.hud {
+  pointer-events: auto;
+}
+
+.overlay-card {
+  width: min(100%, 420px);
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  background: rgba(4, 7, 19, 0.86);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.overlay-card--compact {
+  width: min(100%, 360px);
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #a2b4ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.overlay-card h1,
+.overlay-card h2 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.overlay-card h1 {
+  font-size: clamp(2rem, 5vw, 2.6rem);
+  line-height: 1.05;
+}
+
+.overlay-card h2 {
+  font-size: clamp(1.6rem, 4vw, 2rem);
+}
+
+.overlay-copy {
+  margin: 16px 0 0;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.5;
+}
+
+.overlay-button {
+  margin-top: 24px;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #f9d649, #ffc629);
+  color: #101010;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.countdown {
+  margin: 18px 0 0;
+  color: #f9d649;
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.hud {
+  margin: 24px;
+}
+
+.hud__score {
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .game-stage {
+    width: 100%;
+  }
+
+  .camera-preview {
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    width: 144px;
+  }
+
+  .ui-root {
+    padding: 20px;
+  }
+
+  .overlay-card {
+    padding: 22px;
+  }
 }
