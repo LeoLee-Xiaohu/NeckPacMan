@@ -166,13 +166,15 @@ export class PoseTracker {
     }
 
     return {
+      // Front-facing cameras report horizontal motion in camera space, which feels mirrored
+      // to the player. Flip horizontal deltas so left/right match the player's own movement.
       offsetX:
-        (this.currentPose.centerX - this.neutralPose.centerX) /
+        (this.neutralPose.centerX - this.currentPose.centerX) /
         Math.max((this.currentPose.eyeSpan + this.neutralPose.eyeSpan) / 2, 0.001),
       offsetY:
         (this.currentPose.centerY - this.neutralPose.centerY) /
         Math.max((this.currentPose.faceHeight + this.neutralPose.faceHeight) / 2, 0.001),
-      yaw: this.currentPose.yaw - this.neutralPose.yaw,
+      yaw: this.neutralPose.yaw - this.currentPose.yaw,
       pitch: this.currentPose.pitch - this.neutralPose.pitch,
     };
   }
