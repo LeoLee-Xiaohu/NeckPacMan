@@ -82,3 +82,52 @@ export function renderMaze(context, canvas, maze = MAZE_GRID) {
     }
   }
 }
+
+export class Maze {
+  constructor(layout = MAZE_GRID) {
+    this.grid = layout.map((row) => row.slice());
+    this.height = this.grid.length;
+    this.width = this.grid[0]?.length ?? 0;
+  }
+
+  isWall(cellX, cellY) {
+    if (
+      cellX < 0 ||
+      cellY < 0 ||
+      cellX >= this.width ||
+      cellY >= this.height
+    ) {
+      return true;
+    }
+
+    return this.grid[cellY][cellX] === 1;
+  }
+
+  getFrame(canvasWidth, canvasHeight) {
+    return getMazeLayoutMetrics({
+      width: canvasWidth,
+      height: canvasHeight,
+    }, this.grid);
+  }
+
+  draw(context, frame) {
+    context.fillStyle = "#000000";
+    context.fillRect(frame.offsetX, frame.offsetY, frame.width, frame.height);
+
+    context.fillStyle = "#2b6aff";
+    for (let row = 0; row < this.height; row += 1) {
+      for (let col = 0; col < this.width; col += 1) {
+        if (this.grid[row][col] !== 1) {
+          continue;
+        }
+
+        context.fillRect(
+          frame.offsetX + col * frame.cellSize,
+          frame.offsetY + row * frame.cellSize,
+          frame.cellSize,
+          frame.cellSize,
+        );
+      }
+    }
+  }
+}

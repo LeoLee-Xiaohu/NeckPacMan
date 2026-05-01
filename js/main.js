@@ -71,14 +71,13 @@ const POSE_DIRECTION_VECTORS = {
   UP: "up",
   DOWN: "down",
 };
-
 let animationFrameId = null;
 let lastFrameTime = 0;
+let winTimer = null;
 let mediaStream = null;
 let faceMesh = null;
 let faceMeshReady = false;
 let isCameraReady = false;
-let faceMeshLoopStarted = false;
 
 const gameState = {
   running: false,
@@ -225,6 +224,20 @@ function drawBackdrop(message) {
   context.fillText(message, canvas.width / 2, canvas.height - 72);
 }
 
+function clearWinTimer() {
+  if (winTimer !== null) {
+    window.clearTimeout(winTimer);
+    winTimer = null;
+  }
+}
+
+function resetDemo() {
+  clearWinTimer();
+  tracker.neutralPose = null;
+  resetGameState();
+  drawBackdrop("Press Start to begin");
+}
+
 function drawDebugPlaceholder(message) {
   debugContext.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
   debugContext.fillStyle = "#070b16";
@@ -367,6 +380,8 @@ function startFaceMeshLoop() {
   window.requestAnimationFrame(tick);
 }
 
+let faceMeshLoopStarted = false;
+
 async function initializeTracking() {
   ui.setError("");
   updateCameraStatus("Requesting webcam access...", "loading");
@@ -420,6 +435,7 @@ window.addEventListener("keydown", handleDirectionInput);
 
 ui.onBeforeStart(initializeTracking);
 ui.onStart(() => {
+  clearWinTimer();
   stopGameLoop();
   resetGameState();
   drawBackdrop("Center your head for calibration");
@@ -433,12 +449,9 @@ ui.onPlaying(() => {
 
 ui.onReset(() => {
   stopGameLoop();
-  tracker.neutralPose = null;
-  resetGameState();
-  drawBackdrop("Press Start to begin");
+  resetDemo();
 });
 
-resetGameState();
-drawBackdrop("Press Start to begin");
+resetDemo();
 drawDebugPlaceholder("Waiting for webcam");
 ui.init();
