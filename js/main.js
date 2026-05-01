@@ -70,6 +70,43 @@ let faceMesh = null;
 let faceMeshReady = false;
 let isCameraReady = false;
 
+function isLocalhost(hostname) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
+}
+
+function getCameraAccessError() {
+  if (!window.isSecureContext && !isLocalhost(window.location.hostname)) {
+    return new Error(
+      "Webcam access requires a secure origin. Open this game on https:// or use http://localhost while developing locally.",
+    );
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia && !navigator.getUserMedia && !navigator.webkitGetUserMedia && !navigator.mozGetUserMedia) {
+    return new Error("This browser does not support webcam access.");
+  }
+
+  return null;
+}
+
+async function requestCameraStream(constraints) {
+  if (navigator.mediaDevices?.getUserMedia) {
+    return navigator.mediaDevices.getUserMedia(constraints);
+  }
+
+  const legacyGetUserMedia =
+    navigator.getUserMedia?.bind(navigator) ||
+    navigator.webkitGetUserMedia?.bind(navigator) ||
+    navigator.mozGetUserMedia?.bind(navigator);
+
+  if (legacyGetUserMedia) {
+    return new Promise((resolve, reject) => {
+      legacyGetUserMedia(constraints, resolve, reject);
+    });
+  }
+
+  throw new Error("This browser does not support webcam access.");
+}
+
 const gameState = {
   phase: "idle",
   score: 0,
@@ -318,11 +355,12 @@ async function ensureCameraStream() {
     return;
   }
 
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("This browser does not support webcam access.");
+  const cameraAccessError = getCameraAccessError();
+  if (cameraAccessError) {
+    throw cameraAccessError;
   }
 
-  mediaStream = await navigator.mediaDevices.getUserMedia({
+  mediaStream = await requestCameraStream({
     video: {
       facingMode: "user",
       width: { ideal: 640 },
