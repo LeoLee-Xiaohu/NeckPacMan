@@ -22,12 +22,30 @@
         >
           <div class="camera-preview__label">Camera Preview</div>
           <div class="camera-preview__frame">
-            <span>Waiting for webcam</span>
+            <video
+              id="camera-video"
+              class="camera-preview__video"
+              autoplay
+              playsinline
+              muted
+              hidden
+            ></video>
+            <canvas
+              id="debug-canvas"
+              class="camera-preview__canvas"
+              width="320"
+              height="240"
+              aria-label="Face mesh debug preview"
+            ></canvas>
+            <span id="camera-status" class="camera-preview__status">Waiting for webcam</span>
           </div>
         </div>
         <div id="ui-root" class="ui-root" aria-live="polite"></div>
       </section>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
     <script type="module" src="./js/main.js"></script>
   </body>
 </html>
