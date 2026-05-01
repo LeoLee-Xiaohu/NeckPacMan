@@ -1,4 +1,5 @@
 import { UIController } from "./ui.js";
+import { PoseTracker } from "./tracker.js";
 
 const canvas = document.getElementById("game-canvas");
 const uiRoot = document.getElementById("ui-root");
@@ -46,6 +47,7 @@ const ui = new UIController({
   root: uiRoot,
   preview: cameraPreview,
 });
+const tracker = new PoseTracker();
 
 const MAZE = [
   "111111111111111111111",
@@ -91,6 +93,13 @@ const DIRECTION_VECTORS = {
   s: { x: 0, y: 1 },
   a: { x: -1, y: 0 },
   d: { x: 1, y: 0 },
+};
+
+const POSE_DIRECTION_VECTORS = {
+  LEFT: { x: -1, y: 0 },
+  RIGHT: { x: 1, y: 0 },
+  UP: { x: 0, y: -1 },
+  DOWN: { x: 0, y: 1 },
 };
 
 const BOARD_WIDTH = MAZE[0].length * CELL_SIZE;
@@ -362,6 +371,7 @@ function clearWinTimer() {
 
 function resetDemo() {
   clearWinTimer();
+  tracker.neutralPose = null;
   resetGameState();
   drawBackdrop("Press Start to begin");
 }
@@ -444,7 +454,16 @@ async function ensureFaceMesh() {
         lineWidth: 1,
       });
 
-      console.debug("[FaceMesh] landmarks", landmarks);
+      tracker.updateLandmarks(landmarks);
+
+      if (gameState.running) {
+        const poseDirection = tracker.getDirection();
+
+        if (poseDirection) {
+          gameState.player.nextDirection = { ...POSE_DIRECTION_VECTORS[poseDirection] };
+        }
+      }
+
       updateCameraStatus(`Tracking ${landmarks.length} landmarks`, "ready");
     } else {
       updateCameraStatus("Face detected intermittently. Center your head in frame.", "idle");
@@ -561,6 +580,7 @@ ui.onStart(() => {
 });
 
 ui.onPlaying(() => {
+  tracker.calibrate();
   resetGameState();
   startGameLoop();
 });
