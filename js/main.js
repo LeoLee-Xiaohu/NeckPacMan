@@ -1,3 +1,4 @@
+import { Game } from "./game.js";
 import { UIController } from "./ui.js";
 
 const canvas = document.getElementById("game-canvas");
@@ -26,54 +27,19 @@ const ui = new UIController({
   root: uiRoot,
   preview: cameraPreview,
 });
-
-let winTimer = null;
-
-function drawBackdrop(message) {
-  context.fillStyle = "#000000";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "#2b6aff";
-  context.fillRect(48, 48, canvas.width - 96, canvas.height - 96);
-  context.fillStyle = "#000000";
-  context.fillRect(72, 72, canvas.width - 144, canvas.height - 144);
-  context.fillStyle = "#f9d649";
-  context.beginPath();
-  context.arc(canvas.width / 2, canvas.height / 2, 32, 0.25 * Math.PI, 1.75 * Math.PI);
-  context.lineTo(canvas.width / 2, canvas.height / 2);
-  context.closePath();
-  context.fill();
-  context.fillStyle = "#ffffff";
-  context.font = "28px Trebuchet MS";
-  context.textAlign = "center";
-  context.fillText(message, canvas.width / 2, canvas.height - 120);
-}
-
-function clearWinTimer() {
-  if (winTimer !== null) {
-    window.clearTimeout(winTimer);
-    winTimer = null;
-  }
-}
+const game = new Game({ canvas, context, ui });
 
 function resetDemo() {
-  clearWinTimer();
-  drawBackdrop("Press Start to begin");
+  game.reset();
 }
 
 ui.onStart(() => {
-  clearWinTimer();
-  drawBackdrop("Center your head for calibration");
+  game.stop();
+  game.render();
 });
 
 ui.onPlaying(() => {
-  ui.setScore(120);
-  drawBackdrop("Gameplay preview");
-
-  // Placeholder until gameplay logic is connected.
-  winTimer = window.setTimeout(() => {
-    ui.showWin(120);
-    drawBackdrop("Round complete");
-  }, 1800);
+  game.start();
 });
 
 ui.onReset(() => {
@@ -81,4 +47,5 @@ ui.onReset(() => {
 });
 
 resetDemo();
+game.init();
 ui.init();
