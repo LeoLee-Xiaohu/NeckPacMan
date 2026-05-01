@@ -69,6 +69,8 @@ let mediaStream = null;
 let faceMesh = null;
 let faceMeshReady = false;
 let isCameraReady = false;
+let faceMeshLoopStarted = false;
+let isProcessingFaceMeshFrame = false;
 
 function isLocalhost(hostname) {
   return (
@@ -410,27 +412,50 @@ async function ensureCameraStream() {
   isCameraReady = true;
 }
 
+function scheduleFaceMeshTick(tick) {
+  if (typeof cameraVideo.requestVideoFrameCallback === "function") {
+    cameraVideo.requestVideoFrameCallback(() => {
+      void tick();
+    });
+    return;
+  }
+
+  window.setTimeout(() => {
+    void tick();
+  }, 16);
+}
+
 function startFaceMeshLoop() {
   const tick = async () => {
-    if (!faceMesh || !isCameraReady || cameraVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-      window.requestAnimationFrame(tick);
+    if (!faceMeshLoopStarted) {
       return;
     }
+
+    if (!faceMesh || !isCameraReady || cameraVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      scheduleFaceMeshTick(tick);
+      return;
+    }
+
+    if (isProcessingFaceMeshFrame) {
+      scheduleFaceMeshTick(tick);
+      return;
+    }
+
+    isProcessingFaceMeshFrame = true;
 
     try {
       await faceMesh.send({ image: cameraVideo });
     } catch (error) {
       console.error("Face mesh processing failed.", error);
       updateCameraStatus("Face mesh processing paused.", "error");
+    } finally {
+      isProcessingFaceMeshFrame = false;
+      scheduleFaceMeshTick(tick);
     }
-
-    window.requestAnimationFrame(tick);
   };
 
-  window.requestAnimationFrame(tick);
+  scheduleFaceMeshTick(tick);
 }
-
-let faceMeshLoopStarted = false;
 
 async function initializeTracking() {
   if (tryUpgradeInsecureOrigin()) {
