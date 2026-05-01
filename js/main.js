@@ -1,4 +1,5 @@
 import { UIController } from "./ui.js";
+import { createDebugLandmarks, PoseTracker } from "./tracker.js";
 
 const canvas = document.getElementById("game-canvas");
 const uiRoot = document.getElementById("ui-root");
@@ -26,8 +27,75 @@ const ui = new UIController({
   root: uiRoot,
   preview: cameraPreview,
 });
+const tracker = new PoseTracker();
 
 let winTimer = null;
+let previewFrame = null;
+let isPlaying = false;
+let debugAngles = { yaw: 0, pitch: 0 };
+
+function getPreviewFrame() {
+  if (previewFrame instanceof HTMLDivElement) {
+    return previewFrame;
+  }
+
+  const nextFrame = cameraPreview.querySelector(".camera-preview__frame");
+  if (!(nextFrame instanceof HTMLDivElement)) {
+    throw new Error("Expected .camera-preview__frame to exist.");
+  }
+
+  previewFrame = nextFrame;
+  return previewFrame;
+}
+
+function renderTrackingState(message = "Move within the preview to simulate head pose.") {
+  const pose = tracker.currentPose;
+  const delta = tracker.getPoseDelta();
+  const direction = tracker.getDirection();
+  const frame = getPreviewFrame();
+  const yaw = pose ? pose.yaw.toFixed(1) : "--";
+  const pitch = pose ? pose.pitch.toFixed(1) : "--";
+  const yawDelta = delta ? delta.yaw.toFixed(1) : "--";
+  const pitchDelta = delta ? delta.pitch.toFixed(1) : "--";
+
+  frame.innerHTML = `
+    <div>
+      <strong>${message}</strong><br />
+      Yaw: ${yaw}&deg; (${yawDelta}&deg;)<br />
+      Pitch: ${pitch}&deg; (${pitchDelta}&deg;)<br />
+      Direction: ${direction ?? "NEUTRAL"}
+    </div>
+  `;
+}
+
+function updateDebugPose() {
+  tracker.updateLandmarks(createDebugLandmarks(debugAngles));
+
+  if (isPlaying) {
+    drawBackdrop(`Direction: ${tracker.getDirection() ?? "NEUTRAL"}`);
+  }
+
+  renderTrackingState(
+    isPlaying
+      ? "Directional tracking active."
+      : "Hold a neutral pose here during calibration.",
+  );
+}
+
+function setDebugPoseFromPointer(event) {
+  const frame = getPreviewFrame();
+  const bounds = frame.getBoundingClientRect();
+  const normalizedX = (event.clientX - bounds.left) / bounds.width;
+  const normalizedY = (event.clientY - bounds.top) / bounds.height;
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+  debugAngles = {
+    yaw: clamp((normalizedX - 0.5) * 70, -30, 30),
+    pitch: clamp((normalizedY - 0.5) * 50, -20, 20),
+  };
+
+  updateDebugPose();
+}
 
 function drawBackdrop(message) {
   context.fillStyle = "#000000";
@@ -57,17 +125,26 @@ function clearWinTimer() {
 
 function resetDemo() {
   clearWinTimer();
+  isPlaying = false;
+  tracker.neutralPose = null;
+  debugAngles = { yaw: 0, pitch: 0 };
+  updateDebugPose();
   drawBackdrop("Press Start to begin");
 }
 
 ui.onStart(() => {
   clearWinTimer();
+  isPlaying = false;
+  updateDebugPose();
   drawBackdrop("Center your head for calibration");
 });
 
 ui.onPlaying(() => {
+  tracker.calibrate();
+  isPlaying = true;
   ui.setScore(120);
-  drawBackdrop("Gameplay preview");
+  updateDebugPose();
+  drawBackdrop(`Direction: ${tracker.getDirection() ?? "NEUTRAL"}`);
 
   // Placeholder until gameplay logic is connected.
   winTimer = window.setTimeout(() => {
@@ -82,3 +159,8 @@ ui.onReset(() => {
 
 resetDemo();
 ui.init();
+getPreviewFrame().addEventListener("pointermove", setDebugPoseFromPointer);
+getPreviewFrame().addEventListener("pointerleave", () => {
+  debugAngles = { yaw: 0, pitch: 0 };
+  updateDebugPose();
+});
