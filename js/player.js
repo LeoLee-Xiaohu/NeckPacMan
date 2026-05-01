@@ -12,7 +12,7 @@ const DIRECTION_ANGLES = {
   up: -Math.PI / 2,
 };
 
-const CENTER_EPSILON = 0.08;
+const CENTER_EPSILON = 0.06;
 
 function getGridValue(maze, row, col) {
   if (Array.isArray(maze)) {
