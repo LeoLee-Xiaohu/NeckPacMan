@@ -3,39 +3,10 @@ import { Player } from "./player.js";
 import { UIController } from "./ui.js";
 import { PoseTracker } from "./tracker.js";
 
-const GRID = [
-  "111111111111111111111",
-  "100000000010000000001",
-  "101111011010111101101",
-  "100001010000010100001",
-  "111101011111010101111",
-  "100001000010000100001",
-  "101111111010111111101",
-  "100000001000100000001",
-  "111101101111101101111",
-  "100100000000000001001",
-  "100101111101111101001",
-  "100100000000000001001",
-  "111101101111101101111",
-  "100000001000100000001",
-  "101111111010111111101",
-  "100001000010000100001",
-  "111101011111010101111",
-  "100001010000010100001",
-  "101111011010111101101",
-  "100000000010000000001",
-  "111111111111111111111",
-];
-
-const CELL_SIZE = 24;
+const DOT_RADIUS = 3;
 const PLAYER_SPEED = 4;
 const SCORE_PER_DOT = 10;
-const DIRECTIONS = {
-  left: { x: -1, y: 0, angle: Math.PI },
-  right: { x: 1, y: 0, angle: 0 },
-  up: { x: 0, y: -1, angle: -Math.PI / 2 },
-  down: { x: 0, y: 1, angle: Math.PI / 2 },
-};
+const POSE_DIRECTION_MAP = { LEFT: "left", RIGHT: "right", UP: "up", DOWN: "down" };
 const KEY_TO_DIRECTION = {
   ArrowLeft: "left",
   ArrowRight: "right",
@@ -46,7 +17,6 @@ const KEY_TO_DIRECTION = {
   w: "up",
   s: "down",
 };
-const TURN_EPSILON = 0.08;
 
 const canvas = document.getElementById("game-canvas");
 const uiRoot = document.getElementById("ui-root");
@@ -90,61 +60,25 @@ if (!debugContext) {
   throw new Error("Debug canvas 2D context is unavailable.");
 }
 
-const ui = new UIController({
-  root: uiRoot,
-  preview: cameraPreview,
-});
+const ui = new UIController({ root: uiRoot, preview: cameraPreview });
 const tracker = new PoseTracker();
 
-<<<<<<< HEAD
-const DOT_RADIUS = 3;
-const PLAYER_SPEED = 4;
-
-const INPUT_TO_DIRECTION = {
-  ArrowUp: "up",
-  ArrowDown: "down",
-  ArrowLeft: "left",
-  ArrowRight: "right",
-  w: "up",
-  s: "down",
-  a: "left",
-  d: "right",
-};
-
-const POSE_DIRECTION_VECTORS = {
-  LEFT: "left",
-  RIGHT: "right",
-  UP: "up",
-  DOWN: "down",
-};
 let animationFrameId = null;
-let lastFrameTime = 0;
-let winTimer = null;
+let lastFrameTime = null;
 let mediaStream = null;
 let faceMesh = null;
 let faceMeshReady = false;
 let isCameraReady = false;
 
 const gameState = {
-  running: false,
+  phase: "idle",
   score: 0,
   dots: new Set(),
   player: createPlayer(),
 };
 
 function createPlayer() {
-  return new Player({
-    ...PLAYER_START,
-    speed: PLAYER_SPEED,
-  });
-}
-
-function isPathCell(row, col) {
-  return MAZE_GRID[row]?.[col] === 0;
-}
-
-function createDotKey(row, col) {
-  return `${row}:${col}`;
+  return new Player({ ...PLAYER_START, speed: PLAYER_SPEED });
 }
 
 function seedDots() {
@@ -154,7 +88,7 @@ function seedDots() {
 
   for (let row = 0; row < MAZE_GRID.length; row += 1) {
     for (let col = 0; col < MAZE_GRID[row].length; col += 1) {
-      if (!isPathCell(row, col)) {
+      if (MAZE_GRID[row][col] !== 0) {
         continue;
       }
 
@@ -162,7 +96,7 @@ function seedDots() {
         continue;
       }
 
-      dots.add(createDotKey(row, col));
+      dots.add(`${row}:${col}`);
     }
   }
 
@@ -172,19 +106,20 @@ function seedDots() {
 function collectDotAtPlayer() {
   const row = Math.floor(gameState.player.position.y);
   const col = Math.floor(gameState.player.position.x);
-  const dotKey = createDotKey(row, col);
+  const dotKey = `${row}:${col}`;
 
   if (!gameState.dots.has(dotKey)) {
     return;
   }
 
   gameState.dots.delete(dotKey);
-  gameState.score += 10;
+  gameState.score += SCORE_PER_DOT;
   ui.setScore(gameState.score);
 
   if (gameState.dots.size === 0) {
+    gameState.phase = "win";
     stopGameLoop();
-    gameState.running = false;
+    renderGame();
     ui.showWin(gameState.score);
   }
 }
@@ -220,135 +155,35 @@ function renderGame() {
   });
 }
 
-function frame(timestamp) {
-  if (!gameState.running) {
+function runFrame(timestamp) {
+  if (gameState.phase !== "playing") {
+    animationFrameId = null;
     return;
   }
 
-  const deltaSeconds = Math.min((timestamp - lastFrameTime) / 1000, 0.1);
+  if (lastFrameTime === null) {
+    lastFrameTime = timestamp;
+  }
+
+  const deltaSeconds = Math.min((timestamp - lastFrameTime) / 1000, 0.05);
   lastFrameTime = timestamp;
-=======
-const board = createBoard();
-const gameState = {
-  animationFrameId: null,
-  lastFrameTime: null,
-  phase: "idle",
-  score: 0,
-  remainingDots: 0,
-  pellets: new Set(),
-  player: createPlayer(),
-};
 
-canvas.width = GRID[0].length * CELL_SIZE;
-canvas.height = GRID.length * CELL_SIZE;
+  updatePlayer(deltaSeconds);
+  renderGame();
 
-window.addEventListener("keydown", handleKeydown);
-
-function createBoard() {
-  return GRID.map((row) => row.split("").map((cell) => Number(cell)));
-}
-
-function createPlayer() {
-  return {
-    x: 10,
-    y: 10,
-    direction: "left",
-    queuedDirection: "left",
-    mouthPhase: 0,
-  };
-}
-
-function createPellets() {
-  const pellets = new Set();
-
-  for (let row = 0; row < board.length; row += 1) {
-    for (let column = 0; column < board[row].length; column += 1) {
-      if (board[row][column] === 0 && !(column === 10 && row === 10)) {
-        pellets.add(getCellKey(column, row));
-      }
-    }
-  }
-
-  return pellets;
-}
-
-function getCellKey(column, row) {
-  return `${column},${row}`;
-}
-
-function handleKeydown(event) {
-  const direction = KEY_TO_DIRECTION[event.key];
-
-  if (!direction || gameState.phase !== "playing") {
-    return;
-  }
-
-  event.preventDefault();
-  gameState.player.queuedDirection = direction;
-}
-
-function resetToStartScreen() {
-  stopGameLoop();
-  gameState.phase = "idle";
-  gameState.score = 0;
-  gameState.remainingDots = 0;
-  gameState.pellets = new Set();
-  gameState.player = createPlayer();
-  drawBackdrop("Press Start to begin");
+  animationFrameId = window.requestAnimationFrame(runFrame);
 }
 
 function startGame() {
   stopGameLoop();
   gameState.phase = "playing";
   gameState.score = 0;
-  gameState.pellets = createPellets();
-  gameState.remainingDots = gameState.pellets.size;
+  gameState.dots = seedDots();
   gameState.player = createPlayer();
   ui.setScore(0);
-  collectDotAtCurrentCell();
+  lastFrameTime = null;
   renderGame();
-  gameState.lastFrameTime = null;
-  gameState.animationFrameId = window.requestAnimationFrame(runFrame);
-}
-
-function stopGameLoop() {
-  if (gameState.animationFrameId !== null) {
-    window.cancelAnimationFrame(gameState.animationFrameId);
-    gameState.animationFrameId = null;
-  }
-
-  gameState.lastFrameTime = null;
-}
-
-function runFrame(timestamp) {
-  if (gameState.phase !== "playing") {
-    gameState.animationFrameId = null;
-    return;
-  }
-
-  if (gameState.lastFrameTime === null) {
-    gameState.lastFrameTime = timestamp;
-  }
-
-  const deltaSeconds = Math.min((timestamp - gameState.lastFrameTime) / 1000, 0.05);
-  gameState.lastFrameTime = timestamp;
->>>>>>> 27366e9 (Implement game loop and win condition logic)
-
-  updatePlayer(deltaSeconds);
-  renderGame();
-
-<<<<<<< HEAD
-  if (gameState.running) {
-    animationFrameId = window.requestAnimationFrame(frame);
-  }
-}
-
-function startGameLoop() {
-  stopGameLoop();
-  gameState.running = true;
-  lastFrameTime = performance.now();
-  renderGame();
-  animationFrameId = window.requestAnimationFrame(frame);
+  animationFrameId = window.requestAnimationFrame(runFrame);
 }
 
 function stopGameLoop() {
@@ -356,101 +191,17 @@ function stopGameLoop() {
     window.cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
   }
+
+  lastFrameTime = null;
 }
 
-function resetGameState() {
-  gameState.running = false;
+function resetToStartScreen() {
+  stopGameLoop();
+  gameState.phase = "idle";
   gameState.score = 0;
-  gameState.dots = seedDots();
+  gameState.dots = new Set();
   gameState.player = createPlayer();
-  ui.setScore(0);
-  renderGame();
-=======
-  if (gameState.phase === "playing") {
-    gameState.animationFrameId = window.requestAnimationFrame(runFrame);
-  } else {
-    gameState.animationFrameId = null;
-  }
-}
-
-function updatePlayer(deltaSeconds) {
-  const { player } = gameState;
-  const queuedVector = DIRECTIONS[player.queuedDirection];
-  const centeredColumn = Math.round(player.x);
-  const centeredRow = Math.round(player.y);
-  const isCentered =
-    Math.abs(player.x - centeredColumn) < TURN_EPSILON &&
-    Math.abs(player.y - centeredRow) < TURN_EPSILON;
-
-  if (isCentered) {
-    player.x = centeredColumn;
-    player.y = centeredRow;
-
-    if (canMove(centeredColumn, centeredRow, queuedVector)) {
-      player.direction = player.queuedDirection;
-    }
-  }
-
-  const activeVector = DIRECTIONS[player.direction];
-
-  if (!canMove(player.x, player.y, activeVector)) {
-    collectDotAtCurrentCell();
-    return;
-  }
-
-  const distance = PLAYER_SPEED * deltaSeconds;
-  player.x += activeVector.x * distance;
-  player.y += activeVector.y * distance;
-  player.mouthPhase += deltaSeconds * 10;
-
-  const nextColumn = clamp(player.x, 1, board[0].length - 2);
-  const nextRow = clamp(player.y, 1, board.length - 2);
-  player.x = nextColumn;
-  player.y = nextRow;
-
-  collectDotAtCurrentCell();
-}
-
-function canMove(x, y, vector) {
-  const targetColumn = Math.round(x) + vector.x;
-  const targetRow = Math.round(y) + vector.y;
-
-  if (targetRow < 0 || targetRow >= board.length) {
-    return false;
-  }
-
-  if (targetColumn < 0 || targetColumn >= board[targetRow].length) {
-    return false;
-  }
-
-  return board[targetRow][targetColumn] === 0;
-}
-
-function collectDotAtCurrentCell() {
-  const column = Math.round(gameState.player.x);
-  const row = Math.round(gameState.player.y);
-  const key = getCellKey(column, row);
-
-  if (!gameState.pellets.has(key)) {
-    return;
-  }
-
-  gameState.pellets.delete(key);
-  gameState.remainingDots -= 1;
-  gameState.score += SCORE_PER_DOT;
-  ui.setScore(gameState.score);
-
-  if (gameState.remainingDots === 0) {
-    gameState.phase = "win";
-    stopGameLoop();
-    renderGame();
-    ui.showWin(gameState.score);
-  }
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
->>>>>>> 27366e9 (Implement game loop and win condition logic)
+  drawBackdrop("Press Start to begin");
 }
 
 function drawBackdrop(message) {
@@ -461,63 +212,6 @@ function drawBackdrop(message) {
   context.font = "28px Trebuchet MS";
   context.textAlign = "center";
   context.fillText(message, canvas.width / 2, canvas.height - 72);
-}
-
-function renderGame() {
-  context.fillStyle = "#000000";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  for (let row = 0; row < board.length; row += 1) {
-    for (let column = 0; column < board[row].length; column += 1) {
-      const x = column * CELL_SIZE;
-      const y = row * CELL_SIZE;
-
-      if (board[row][column] === 1) {
-        context.fillStyle = "#1734b9";
-        context.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-        continue;
-      }
-
-      if (gameState.pellets.has(getCellKey(column, row))) {
-        context.fillStyle = "#f7f7f7";
-        context.beginPath();
-        context.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.12, 0, Math.PI * 2);
-        context.fill();
-      }
-    }
-  }
-
-  drawPlayer();
-}
-
-<<<<<<< HEAD
-function resetDemo() {
-  clearWinTimer();
-  tracker.neutralPose = null;
-  resetGameState();
-  drawBackdrop("Press Start to begin");
-=======
-function drawPlayer() {
-  const { player } = gameState;
-  const centerX = player.x * CELL_SIZE + CELL_SIZE / 2;
-  const centerY = player.y * CELL_SIZE + CELL_SIZE / 2;
-  const mouthOpen = 0.18 + ((Math.sin(player.mouthPhase) + 1) / 2) * 0.22;
-  const facingAngle = DIRECTIONS[player.direction].angle;
-
-  context.fillStyle = "#f9d649";
-  context.beginPath();
-  context.moveTo(centerX, centerY);
-  context.arc(
-    centerX,
-    centerY,
-    CELL_SIZE * 0.42,
-    facingAngle + mouthOpen,
-    facingAngle - mouthOpen + Math.PI * 2,
-    false,
-  );
-  context.closePath();
-  context.fill();
->>>>>>> 27366e9 (Implement game loop and win condition logic)
 }
 
 function drawDebugPlaceholder(message) {
@@ -600,11 +294,11 @@ async function ensureFaceMesh() {
 
       tracker.updateLandmarks(landmarks);
 
-      if (gameState.running) {
+      if (gameState.phase === "playing") {
         const poseDirection = tracker.getDirection();
 
         if (poseDirection) {
-          gameState.player.setDirection(POSE_DIRECTION_VECTORS[poseDirection]);
+          gameState.player.setDirection(POSE_DIRECTION_MAP[poseDirection]);
         }
       }
 
@@ -702,10 +396,10 @@ async function initializeTracking() {
   }
 }
 
-function handleDirectionInput(event) {
-  const direction = INPUT_TO_DIRECTION[event.key];
+function handleKeydown(event) {
+  const direction = KEY_TO_DIRECTION[event.key];
 
-  if (!direction) {
+  if (!direction || gameState.phase !== "playing") {
     return;
   }
 
@@ -713,35 +407,17 @@ function handleDirectionInput(event) {
   gameState.player.setDirection(direction);
 }
 
-window.addEventListener("keydown", handleDirectionInput);
+window.addEventListener("keydown", handleKeydown);
 
 ui.onBeforeStart(initializeTracking);
+
 ui.onStart(() => {
-<<<<<<< HEAD
-  clearWinTimer();
   stopGameLoop();
-  resetGameState();
-=======
-  stopGameLoop();
->>>>>>> 27366e9 (Implement game loop and win condition logic)
   drawBackdrop("Center your head for calibration");
 });
 
 ui.onPlaying(() => {
-<<<<<<< HEAD
   tracker.calibrate();
-  resetGameState();
-  startGameLoop();
-});
-
-ui.onReset(() => {
-  stopGameLoop();
-  resetDemo();
-});
-
-resetDemo();
-drawDebugPlaceholder("Waiting for webcam");
-=======
   startGame();
 });
 
@@ -750,5 +426,5 @@ ui.onReset(() => {
 });
 
 resetToStartScreen();
->>>>>>> 27366e9 (Implement game loop and win condition logic)
+drawDebugPlaceholder("Waiting for webcam");
 ui.init();
