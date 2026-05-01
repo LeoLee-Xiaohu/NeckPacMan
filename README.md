@@ -13,6 +13,10 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000`.
 
+Use `localhost`, not a LAN IP such as `192.168.x.x` or `0.0.0.0`. Browsers allow
+webcam access on `http://localhost` for local development, but typically block it
+on non-secure `http://` origins.
+
 ## GitHub Pages deployment
 
 This repo is configured for automated GitHub Pages deployment from the `main`
