@@ -15,6 +15,13 @@ export const DIRECTION_THRESHOLDS = {
   DOWN: 10,
 };
 
+export const POSITION_THRESHOLDS = {
+  LEFT: -0.12,
+  RIGHT: 0.12,
+  UP: -0.12,
+  DOWN: 0.12,
+};
+
 function averagePoints(points) {
   const total = points.reduce(
     (result, point) => ({
@@ -68,6 +75,10 @@ export function calculatePoseFromLandmarks(landmarks) {
   const faceHeight = Math.max(Math.abs(mouth.y - eyeCenter.y), 0.001);
 
   return {
+    centerX: faceCenter.x,
+    centerY: faceCenter.y,
+    eyeSpan,
+    faceHeight,
     yaw: toDegrees(Math.atan2(noseTip.x - faceCenter.x, eyeSpan / 2)),
     pitch: toDegrees(Math.atan2(noseTip.y - faceCenter.y, faceHeight / 2)),
   };
@@ -75,6 +86,26 @@ export function calculatePoseFromLandmarks(landmarks) {
 
 export function getDirectionFromPoseDelta(deltaPose) {
   const candidates = [
+    {
+      direction: "LEFT",
+      active: deltaPose.offsetX < POSITION_THRESHOLDS.LEFT,
+      score: Math.abs(deltaPose.offsetX / POSITION_THRESHOLDS.LEFT),
+    },
+    {
+      direction: "RIGHT",
+      active: deltaPose.offsetX > POSITION_THRESHOLDS.RIGHT,
+      score: Math.abs(deltaPose.offsetX / POSITION_THRESHOLDS.RIGHT),
+    },
+    {
+      direction: "UP",
+      active: deltaPose.offsetY < POSITION_THRESHOLDS.UP,
+      score: Math.abs(deltaPose.offsetY / POSITION_THRESHOLDS.UP),
+    },
+    {
+      direction: "DOWN",
+      active: deltaPose.offsetY > POSITION_THRESHOLDS.DOWN,
+      score: Math.abs(deltaPose.offsetY / POSITION_THRESHOLDS.DOWN),
+    },
     {
       direction: "LEFT",
       active: deltaPose.yaw < DIRECTION_THRESHOLDS.LEFT,
@@ -135,6 +166,12 @@ export class PoseTracker {
     }
 
     return {
+      offsetX:
+        (this.currentPose.centerX - this.neutralPose.centerX) /
+        Math.max((this.currentPose.eyeSpan + this.neutralPose.eyeSpan) / 2, 0.001),
+      offsetY:
+        (this.currentPose.centerY - this.neutralPose.centerY) /
+        Math.max((this.currentPose.faceHeight + this.neutralPose.faceHeight) / 2, 0.001),
       yaw: this.currentPose.yaw - this.neutralPose.yaw,
       pitch: this.currentPose.pitch - this.neutralPose.pitch,
     };
