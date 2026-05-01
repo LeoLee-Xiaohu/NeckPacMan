@@ -13,20 +13,21 @@ const DIRECTION_ANGLES = {
 };
 
 const CENTER_EPSILON = 0.08;
-const SNAP_EPSILON = 0.001;
 
-function moveTowards(value, target, maxStep) {
-  const delta = target - value;
-
-  if (Math.abs(delta) <= maxStep) {
-    return target;
+function getGridValue(maze, row, col) {
+  if (Array.isArray(maze)) {
+    return maze[row]?.[col];
   }
 
-  return value + Math.sign(delta) * maxStep;
+  return maze.grid?.[row]?.[col];
+}
+
+function getCellCenter(value) {
+  return Math.floor(value) + 0.5;
 }
 
 function isCentered(value) {
-  return Math.abs(value - Math.round(value)) <= CENTER_EPSILON;
+  return Math.abs(value - getCellCenter(value)) <= CENTER_EPSILON;
 }
 
 export class Player {
@@ -60,35 +61,28 @@ export class Player {
     }
 
     const vector = DIRECTION_VECTORS[direction];
-    const cellX = Math.round(fromX);
-    const cellY = Math.round(fromY);
-    return !maze.isWall(cellX + vector.x, cellY + vector.y);
+    const row = Math.floor(fromY);
+    const col = Math.floor(fromX);
+    return getGridValue(maze, row + vector.y, col + vector.x) === 0;
   }
 
   update(deltaSeconds, maze) {
-    const wasMoving = this.direction !== null;
-    const centerX = Math.round(this.position.x);
-    const centerY = Math.round(this.position.y);
     const alignedX = isCentered(this.position.x);
     const alignedY = isCentered(this.position.y);
 
     if (alignedX) {
-      this.position.x = centerX;
+      this.position.x = getCellCenter(this.position.x);
     }
 
     if (alignedY) {
-      this.position.y = centerY;
+      this.position.y = getCellCenter(this.position.y);
     }
 
-    if (this.queuedDirection && alignedX && alignedY) {
-      if (this.canMove(this.queuedDirection, maze, centerX, centerY)) {
+    if (alignedX && alignedY) {
+      if (this.canMove(this.queuedDirection, maze)) {
         this.direction = this.queuedDirection;
-      }
-    }
-
-    if (!this.direction && this.queuedDirection && alignedX && alignedY) {
-      if (this.canMove(this.queuedDirection, maze, centerX, centerY)) {
-        this.direction = this.queuedDirection;
+      } else if (!this.canMove(this.direction, maze)) {
+        this.direction = null;
       }
     }
 
@@ -96,52 +90,25 @@ export class Player {
       return;
     }
 
-    const movingHorizontally =
-      this.direction === "left" || this.direction === "right";
-    const movingVertically = !movingHorizontally;
-
-    if (movingHorizontally && !alignedY) {
-      this.position.y = moveTowards(this.position.y, centerY, this.speed * deltaSeconds);
-      return;
-    }
-
-    if (movingVertically && !alignedX) {
-      this.position.x = moveTowards(this.position.x, centerX, this.speed * deltaSeconds);
-      return;
-    }
-
-    if (!this.canMove(this.direction, maze, centerX, centerY)) {
-      this.position.x = centerX;
-      this.position.y = centerY;
-      this.direction = null;
-      return;
-    }
-
     const vector = DIRECTION_VECTORS[this.direction];
-    const step = this.speed * deltaSeconds;
-    this.position.x += vector.x * step;
-    this.position.y += vector.y * step;
+    this.position.x += vector.x * this.speed * deltaSeconds;
+    this.position.y += vector.y * this.speed * deltaSeconds;
 
-    const nextCenterX = Math.round(this.position.x);
-    const nextCenterY = Math.round(this.position.y);
-
-    if (vector.x !== 0 && Math.abs(this.position.x - nextCenterX) <= SNAP_EPSILON) {
-      this.position.x = nextCenterX;
+    if (isCentered(this.position.x)) {
+      this.position.x = getCellCenter(this.position.x);
     }
 
-    if (vector.y !== 0 && Math.abs(this.position.y - nextCenterY) <= SNAP_EPSILON) {
-      this.position.y = nextCenterY;
+    if (isCentered(this.position.y)) {
+      this.position.y = getCellCenter(this.position.y);
     }
 
-    if (wasMoving || this.direction) {
-      this.animationTime += deltaSeconds;
-    }
+    this.animationTime += deltaSeconds;
   }
 
   draw(context, frame) {
-    const pixelX = frame.offsetX + (this.position.x + 0.5) * frame.cellSize;
-    const pixelY = frame.offsetY + (this.position.y + 0.5) * frame.cellSize;
-    const radius = frame.cellSize * 0.42;
+    const pixelX = frame.offsetX + this.position.x * frame.cellSize;
+    const pixelY = frame.offsetY + this.position.y * frame.cellSize;
+    const radius = frame.cellSize * 0.38;
     const facing = this.direction ?? this.queuedDirection ?? "right";
     const baseAngle = DIRECTION_ANGLES[facing];
     const moving = this.direction !== null;
@@ -149,7 +116,7 @@ export class Player {
       ? 0.12 + ((Math.sin(this.animationTime * 18) + 1) / 2) * 0.55
       : 0.18;
 
-    context.fillStyle = "#facc15";
+    context.fillStyle = "#f9d649";
     context.beginPath();
     context.moveTo(pixelX, pixelY);
     context.arc(
