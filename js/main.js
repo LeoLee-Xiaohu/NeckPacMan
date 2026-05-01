@@ -71,13 +71,49 @@ let faceMeshReady = false;
 let isCameraReady = false;
 
 function isLocalhost(hostname) {
-  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
+  return (
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname === "::1" ||
+    hostname === "[::1]" ||
+    /^127(?:\.\d{1,3}){3}$/.test(hostname)
+  );
+}
+
+function getLocalhostUrl() {
+  return `http://localhost${window.location.port ? `:${window.location.port}` : ""}${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+function getHttpsUrl() {
+  return `https://${window.location.host}${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+function tryUpgradeInsecureOrigin() {
+  if (window.location.protocol !== "http:" || window.isSecureContext) {
+    return false;
+  }
+
+  if (window.location.hostname === "0.0.0.0") {
+    updateCameraStatus("Switching to localhost for webcam access...", "loading");
+    ui.setError("Local webcam access works on http://localhost, not http://0.0.0.0.");
+    window.location.replace(getLocalhostUrl());
+    return true;
+  }
+
+  if (!isLocalhost(window.location.hostname)) {
+    updateCameraStatus("Switching to HTTPS for webcam access...", "loading");
+    ui.setError("Webcam access needs HTTPS on this host. Redirecting now.");
+    window.location.replace(getHttpsUrl());
+    return true;
+  }
+
+  return false;
 }
 
 function getCameraAccessError() {
   if (!window.isSecureContext && !isLocalhost(window.location.hostname)) {
     return new Error(
-      "Webcam access requires a secure origin. Open this game on https:// or use http://localhost while developing locally.",
+      "Webcam access requires HTTPS on this host. Open this game on https://, or use http://localhost while developing locally.",
     );
   }
 
@@ -397,6 +433,10 @@ function startFaceMeshLoop() {
 let faceMeshLoopStarted = false;
 
 async function initializeTracking() {
+  if (tryUpgradeInsecureOrigin()) {
+    return false;
+  }
+
   ui.setError("");
   updateCameraStatus("Requesting webcam access...", "loading");
   drawDebugPlaceholder("Requesting webcam");
