@@ -15,7 +15,9 @@ Then open `http://localhost:8000`.
 
 Use `localhost`, not a LAN IP such as `192.168.x.x` or `0.0.0.0`. Browsers allow
 webcam access on `http://localhost` for local development, but typically block it
-on non-secure `http://` origins.
+on non-secure `http://` origins. If you accidentally open `http://0.0.0.0:8000`,
+the app now rewrites that URL to `localhost` automatically before requesting the
+camera.
 
 ## GitHub Pages deployment
 
