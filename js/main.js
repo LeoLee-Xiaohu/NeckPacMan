@@ -71,6 +71,8 @@ let faceMeshReady = false;
 let isCameraReady = false;
 let faceMeshLoopStarted = false;
 let isProcessingFaceMeshFrame = false;
+let faceMeshLoopTimeoutId = null;
+const FACE_MESH_LOOP_DELAY_MS = 16;
 
 function isLocalhost(hostname) {
   return (
@@ -308,6 +310,14 @@ function updateCameraStatus(message, tone = "idle") {
 }
 
 function stopMediaStream() {
+  if (faceMeshLoopTimeoutId !== null) {
+    window.clearTimeout(faceMeshLoopTimeoutId);
+    faceMeshLoopTimeoutId = null;
+  }
+
+  faceMeshLoopStarted = false;
+  isProcessingFaceMeshFrame = false;
+
   if (!mediaStream) {
     return;
   }
@@ -413,16 +423,10 @@ async function ensureCameraStream() {
 }
 
 function scheduleFaceMeshTick(tick) {
-  if (typeof cameraVideo.requestVideoFrameCallback === "function") {
-    cameraVideo.requestVideoFrameCallback(() => {
-      void tick();
-    });
-    return;
-  }
-
-  window.setTimeout(() => {
+  faceMeshLoopTimeoutId = window.setTimeout(() => {
+    faceMeshLoopTimeoutId = null;
     void tick();
-  }, 16);
+  }, FACE_MESH_LOOP_DELAY_MS);
 }
 
 function startFaceMeshLoop() {
@@ -474,8 +478,8 @@ async function initializeTracking() {
     updateCameraStatus("Webcam connected. Looking for a face...", "loading");
 
     if (!faceMeshLoopStarted) {
-      startFaceMeshLoop();
       faceMeshLoopStarted = true;
+      startFaceMeshLoop();
     }
 
     return true;
