@@ -174,7 +174,8 @@ export class PoseTracker {
       offsetY:
         (this.currentPose.centerY - this.neutralPose.centerY) /
         Math.max((this.currentPose.faceHeight + this.neutralPose.faceHeight) / 2, 0.001),
-      yaw: this.neutralPose.yaw - this.currentPose.yaw,
+      // Yaw is already derived from face landmarks in player-relative orientation.
+      yaw: this.currentPose.yaw - this.neutralPose.yaw,
       pitch: this.currentPose.pitch - this.neutralPose.pitch,
     };
   }
