@@ -142,6 +142,10 @@ export class PoseTracker {
     this.currentPose = null;
   }
 
+  resetCalibration() {
+    this.neutralPose = null;
+  }
+
   updateLandmarks(landmarks) {
     this.currentPose = calculatePoseFromLandmarks(landmarks);
     return this.currentPose;
