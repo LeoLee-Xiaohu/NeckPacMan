@@ -19,11 +19,6 @@ body {
 
 .app-shell {
   padding: 24px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 24px;
 }
 
 .game-stage {
@@ -42,6 +37,9 @@ body {
 }
 
 .camera-preview {
+  position: absolute;
+  top: 20px;
+  right: 20px;
   width: 180px;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -49,7 +47,6 @@ body {
   background: rgba(6, 10, 24, 0.82);
   backdrop-filter: blur(10px);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
-  flex: 0 0 auto;
 }
 
 .camera-preview__label {
@@ -224,7 +221,6 @@ body {
   .app-shell {
     width: 100%;
     padding: 16px;
-    gap: 16px;
   }
 
   .game-stage {
@@ -232,7 +228,10 @@ body {
   }
 
   .camera-preview {
-    width: min(100%, 320px);
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    width: 144px;
   }
 
   .ui-root {
