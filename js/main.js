@@ -309,15 +309,6 @@ function updateCameraStatus(message, tone = "idle") {
   ui.setCameraStatus(message, tone);
 }
 
-function calibrateTrackerIfReady() {
-  if (!tracker.currentPose) {
-    return false;
-  }
-
-  tracker.calibrate();
-  return true;
-}
-
 function stopMediaStream() {
   if (faceMeshLoopTimeoutId !== null) {
     window.clearTimeout(faceMeshLoopTimeoutId);
@@ -389,10 +380,6 @@ async function ensureFaceMesh() {
       tracker.updateLandmarks(landmarks);
 
       if (gameState.phase === "playing") {
-        if (!tracker.neutralPose) {
-          tracker.calibrate();
-        }
-
         const poseDirection = tracker.getDirection();
 
         if (poseDirection) {
@@ -532,19 +519,12 @@ window.addEventListener("keydown", handleKeydown);
 ui.onBeforeStart(initializeTracking);
 
 ui.onStart(() => {
-  tracker.resetCalibration();
   stopGameLoop();
   drawBackdrop("Center your head for calibration");
 });
 
 ui.onPlaying(() => {
-  if (!calibrateTrackerIfReady()) {
-    updateCameraStatus(
-      "Game started. Use arrow keys until face tracking locks on.",
-      "idle",
-    );
-  }
-
+  tracker.calibrate();
   startGame();
 });
 
