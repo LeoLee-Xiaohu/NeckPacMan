@@ -6,6 +6,7 @@ import { PoseTracker } from "./tracker.js";
 const DOT_RADIUS = 3;
 const PLAYER_SPEED = 4;
 const SCORE_PER_DOT = 10;
+const WINNING_SCORE = 1800;
 const POSE_DIRECTION_MAP = { LEFT: "left", RIGHT: "right", UP: "up", DOWN: "down" };
 const KEY_TO_DIRECTION = {
   ArrowLeft: "left",
@@ -193,12 +194,16 @@ function collectDotAtPlayer() {
   gameState.score += SCORE_PER_DOT;
   ui.setScore(gameState.score);
 
-  if (gameState.dots.size === 0) {
-    gameState.phase = "win";
-    stopGameLoop();
-    renderGame();
-    ui.showWin(gameState.score);
+  if (gameState.score >= WINNING_SCORE || gameState.dots.size === 0) {
+    winGame();
   }
+}
+
+function winGame() {
+  gameState.phase = "win";
+  stopGameLoop();
+  renderGame();
+  ui.showWin(gameState.score);
 }
 
 function updatePlayer(deltaSeconds) {
