@@ -171,7 +171,7 @@ export class UIController {
           <p class="eyebrow">NeckPac</p>
           <h1>Exercise your neck, eat the dots.</h1>
           <p class="overlay-copy">
-            Start a short session, grant camera access when prompted, and guide Pac-Man with head movement.
+            Start a short session, grant camera access when prompted, and guide Pac-Man with head movement. Win by eating all dots.
           </p>
           <p class="camera-hint camera-hint--${this.cameraTone}">${this.cameraMessage}</p>
           ${this.errorMessage ? `<p class="overlay-error">${this.errorMessage}</p>` : ""}
