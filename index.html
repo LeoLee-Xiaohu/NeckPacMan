@@ -16,33 +16,33 @@
           height="600"
           aria-label="NeckPacMan game canvas"
         ></canvas>
-        <div
-          id="camera-preview"
-          class="camera-preview"
-          aria-label="Camera preview container"
-        >
-          <div class="camera-preview__label">Camera Preview</div>
-          <div class="camera-preview__frame">
-            <video
-              id="camera-video"
-              class="camera-preview__video"
-              autoplay
-              playsinline
-              muted
-              hidden
-            ></video>
-            <canvas
-              id="debug-canvas"
-              class="camera-preview__canvas"
-              width="320"
-              height="240"
-              aria-label="Face mesh debug preview"
-            ></canvas>
-            <span id="camera-status" class="camera-preview__status">Waiting for webcam</span>
-          </div>
-        </div>
         <div id="ui-root" class="ui-root" aria-live="polite"></div>
       </section>
+      <aside
+        id="camera-preview"
+        class="camera-preview"
+        aria-label="Camera preview container"
+      >
+        <div class="camera-preview__label">Camera Preview</div>
+        <div class="camera-preview__frame">
+          <video
+            id="camera-video"
+            class="camera-preview__video"
+            autoplay
+            playsinline
+            muted
+            hidden
+          ></video>
+          <canvas
+            id="debug-canvas"
+            class="camera-preview__canvas"
+            width="320"
+            height="240"
+            aria-label="Face mesh debug preview"
+          ></canvas>
+          <span id="camera-status" class="camera-preview__status">Waiting for webcam</span>
+        </div>
+      </aside>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>

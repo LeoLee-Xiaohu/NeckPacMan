@@ -18,12 +18,17 @@ body {
 }
 
 .app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  align-items: start;
+  gap: 20px;
+  width: min(100vw, 1088px);
   padding: 24px;
 }
 
 .game-stage {
   position: relative;
-  width: min(800px, calc(100vw - 48px));
+  width: 100%;
 }
 
 #game-canvas {
@@ -37,10 +42,7 @@ body {
 }
 
 .camera-preview {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 180px;
+  width: 100%;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
@@ -87,6 +89,7 @@ body {
 
 .ui-root {
   position: absolute;
+  z-index: 1;
   inset: 0;
   display: grid;
   place-items: center;
@@ -221,6 +224,7 @@ body {
   .app-shell {
     width: 100%;
     padding: 16px;
+    grid-template-columns: 1fr;
   }
 
   .game-stage {
@@ -228,10 +232,8 @@ body {
   }
 
   .camera-preview {
-    top: auto;
-    right: 16px;
-    bottom: 16px;
-    width: 144px;
+    width: min(100%, 220px);
+    justify-self: end;
   }
 
   .ui-root {

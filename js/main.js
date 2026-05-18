@@ -33,8 +33,8 @@ if (!(uiRoot instanceof HTMLDivElement)) {
   throw new Error("Expected #ui-root to be an HTMLDivElement.");
 }
 
-if (!(cameraPreview instanceof HTMLDivElement)) {
-  throw new Error("Expected #camera-preview to be an HTMLDivElement.");
+if (!(cameraPreview instanceof HTMLElement)) {
+  throw new Error("Expected #camera-preview to be an HTMLElement.");
 }
 
 if (!(cameraVideo instanceof HTMLVideoElement)) {
